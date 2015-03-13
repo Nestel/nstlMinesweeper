@@ -4,6 +4,7 @@
 
 #define FIELD_SIZE 8
 #define TOTAL_NUM_OF_MINES 10
+#define MAX_NUM_OF_FLAGS 10
 
 typedef struct {
 	int value;
@@ -12,6 +13,7 @@ typedef struct {
 	int flag;
 }fieldPos;
 
+int flagCounter = 0;
 fieldPos field[FIELD_SIZE][FIELD_SIZE];
 
 void generateField() {
@@ -43,6 +45,7 @@ void placeRandomMine() {
 void printField() {
 	int i, j;
 	system ("clear");
+	printf("Flags %i/%i\n\n", flagCounter, MAX_NUM_OF_FLAGS);
 	printf("   1  2  3  4  5  6  7  8 \n");
 	printf("  -----------------------\n");
 	for ( i = 0; i < FIELD_SIZE; i++ ) {
@@ -255,6 +258,10 @@ void uncoverField(int x, int y) {
 
 	if ( field[x][y].value == 0 && field[x][y].uncovered == 0 ) {
 		field[x][y].uncovered = 1;
+		if ( field[x][y].flag == 1 ) {
+			field[x][y].flag = 0;
+			flagCounter--;
+		}
 		//if i am in the upper row 
 		if ( x == 0 ) {
 			//if i am in the first column
@@ -411,6 +418,11 @@ void uncoverField(int x, int y) {
 	}
 	else if ( field[x][y].value > 0 ) {
 		field[x][y].uncovered = 1;
+
+		if ( field[x][y].flag == 1 ) {
+			field[x][y].flag = 0;
+			flagCounter--;
+		}
 	}
 }
 
@@ -418,9 +430,11 @@ void toggleFlag(int x, int y) {
 	if ( field[x][y].uncovered == 0 ) {
 		if ( field[x][y].flag == 1 ) {
 			field[x][y].flag = 0;
+			flagCounter--;
 		}
 		else {
 			field[x][y].flag = 1;
+			flagCounter++;
 		}
 	}
 	else {
@@ -451,18 +465,28 @@ int game() {
 		printField();
 
 		do {
-			printf("Enter your choice: ");
+
+			printf("Enter your choice (f for flag, u for uncover): ");
 			if ( numOfWhileCycles > 0 ) {
 				printf("WRONG COORDINATES, TRY AGAIN ! \n");
 			}
 			scanf("%c", &choice );
 			if ( choice == 'f' ) {
+				if (flagCounter == 10) {
+					choice = ' ';
+					continue;
+				}
 				printf("Position for the flag to be placed at: ");
 			}		
-			else {
+			else if ( choice == 'u') {
 				printf("Position to be tested: ");
 			}
+			else {
+				printf("wrong choice\n");
+				continue;
+			}
 			scanf("%i %i", &userX, &userY);		
+			getchar();
 			numOfWhileCycles++;
 		}while (userX > (FIELD_SIZE) || userX < 1 || userY > (FIELD_SIZE) || userY < 1);
 		numOfWhileCycles = 0;
@@ -472,7 +496,7 @@ int game() {
 		if ( choice == 'f' ) {
 			toggleFlag(userX, userY);		
 		}
-		else {
+		else if (choice == 'u') {
 			if ( field[userX][userY].value == -1 ) {
 				playerAlive = 0;
 				printf("YOU DIED. A MINE BLASTED YOUR INTESTINES ALL OVER THE PLACE\n");
@@ -482,7 +506,8 @@ int game() {
 				uncoverField(userX, userY);
 			}
 		}
-		fflush(stdin);
+		choice = ' ';
+		numOfWhileCycles = 0;
 	}
 	printf("CONGRATULATION YOU WON MAN ! YOU ROCK !\n");
 	return 1;
